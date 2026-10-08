@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Student Association TV</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #090909; color: #fff; padding: 20px; }
+    .container { max-width: 700px; margin: 0 auto; }
+    h1, h2 { color: #e50914; margin-bottom: 20px; text-align: center; }
+    .card { background: #151515; border: 1px solid #222; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
+    input, select, textarea, button { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 5px; border: 1px solid #333; background: #1f1f1f; color: #fff; outline: none; }
+    label { font-size: 13px; color: #aaa; margin-bottom: 5px; display: block; }
+    button { background: #e50914; font-weight: bold; cursor: pointer; border: none; }
+    button:hover { background: #b80710; }
+    .news-item { background: #202020; padding: 12px; margin-bottom: 10px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+    .btn-del { width: auto; background: #dc3545; padding: 6px 12px; margin: 0; }
+    #adminSection { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>DVT Admin Dashboard</h1>
+
+    <!-- LOGIN FORM -->
+    <div id="loginSection" class="card">
+      <h2>Se Connecter</h2>
+      <input type="text" id="username" placeholder="Nom d'utilisateur" value="admin">
+      <input type="password" id="password" placeholder="Mot de passe" value="admin123">
+      <button onclick="login()">Connexion</button>
+    </div>
+
+    <!-- MAIN ADMIN PANEL -->
+    <div id="adminSection">
+      <div class="card">
+        <h2>Publier un Article / Vidéo</h2>
+        <input type="text" id="title" placeholder="Titre">
+        <select id="category">
+          <option value="Actualites">Actualités</option>
+          <option value="Sport">Sport</option>
+          <option value="Interviews">Interviews</option>
+          <option value="Culture">Culture</option>
+          <option value="Divertissements">Divertissements</option>
+        </select>
+        
+        <label>📁 Choisir une image/vidéo depuis le stockage (Storage) :</label>
+        <input type="file" id="mediaFile" accept="image/*,video/*">
+
+        <label>OU mettre un lien direct (Cloudinary/URL) :</label>
+        <input type="text" id="imageUrl" placeholder="Lien direct (Optionnel)">
+
+        <textarea id="content" rows="4" placeholder="Contenu de l'article..."></textarea>
+        <button onclick="addNews()">Publier</button>
+      </div>
+
+      <div class="card">
+        <h2>Articles Publiés</h2>
+        <div id="newsList">Chargement...</div>
+      </div>
+      <button onclick="logout()" style="background:#444;">Déconnexion</button>
+    </div>
+  </div>
+
+  <script>
+    let token = localStorage.getItem('dvt_token');
+
+    if (token) {
+      showDashboard();
+    }
+
+    async function login() {
+      const u = document.getElementById('username').value;
+      const p = document.getElementById('password').value;
+
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: u, password: p })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        token = data.token;
+        localStorage.setItem('dvt_token', token);
+        showDashboard();
+      } else {
+        alert(data.message);
+      }
+    }
+
+    function showDashboard() {
+      document.getElementById('loginSection').style.display = 'none';
+      document.getElementById('adminSection').style.display = 'block';
+      loadAdminNews();
+    }
+
+    function logout() {
+      localStorage.removeItem('dvt_token');
+      location.reload();
+    }
+
+    async function loadAdminNews() {
+      const res = await fetch('/api/news');
+      const data = await res.json();
+      const container = document.getElementById('newsList');
+
+      if (data.success && data.data.length > 0) {
+        container.innerHTML = data.data.map(item => `
+          <div class="news-item">
+            <div>
+              <strong>[${item.category}]</strong> ${item.title}
+            </div>
+            <button class="btn-del" onclick="deleteNews(${item.id})">Supprimer</button>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = '<p style="color:#888;">Aucun article trouvé.</p>';
+      }
+    }
+
+    async function addNews() {
+      const title = document.getElementById('title').value;
+      const category = document.getElementById('category').value;
+      const imageUrl = document.getElementById('imageUrl').value;
+      const content = document.getElementById('content').value;
+      const fileInput = document.getElementById('mediaFile');
+
+      if (!title || !content) {
+        return alert('Veuillez remplir le titre et le contenu.');
+      }
+
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('category', category);
+      formData.append('imageUrl', imageUrl);
+      formData.append('content', content);
+      
+      if (fileInput.files[0]) {
+        formData.append('mediaFile', fileInput.files[0]);
+      }
+
+      const res = await fetch('/api/admin/news', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + token
+        },
+        body: formData
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        document.getElementById('title').value = '';
+        document.getElementById('imageUrl').value = '';
+        document.getElementById('content').value = '';
+        document.getElementById('mediaFile').value = '';
+        loadAdminNews();
+      } else {
+        alert(data.message);
+      }
+    }
+
+    async function deleteNews(id) {
+      if (confirm('Voulez-vous vraiment supprimer cet article ?')) {
+        const res = await fetch(`/api/admin/news/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        if (data.success) loadAdminNews();
+      }
+    }
+  </script>
+</body>
+</html>
