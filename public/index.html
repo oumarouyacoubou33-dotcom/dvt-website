@@ -306,11 +306,11 @@
         filtered.forEach(item => {
           const originalIndex = allNews.findIndex(n => n.id === item.id);
           let mediaHTML = '🎓';
-          if (item.image) {
-            if (isVideoFile(item.image)) {
-              mediaHTML = `<video src="${item.image}" muted preload="metadata"></video>`;
+          if (item.media_url) {
+            if (isVideoFile(item.media_url)) {
+              mediaHTML = `<video src="${item.media_url}" muted preload="metadata"></video>`;
             } else {
-              mediaHTML = `<img src="${item.image}" alt="media">`;
+              mediaHTML = `<img src="${item.media_url}" alt="media">`;
             }
           }
           container.innerHTML += `
@@ -337,11 +337,11 @@
       document.getElementById('modalContent').innerText = item.content;
 
       const mediaContainer = document.getElementById('modalMediaContainer');
-      if (item.image) {
-        if (isVideoFile(item.image)) {
-          mediaContainer.innerHTML = `<video src="${item.image}" controls preload="metadata" class="modal-video"></video>`;
+      if (item.media_url) {
+        if (isVideoFile(item.media_url)) {
+          mediaContainer.innerHTML = `<video src="${item.media_url}" controls preload="metadata" class="modal-video"></video>`;
         } else {
-          mediaContainer.innerHTML = `<img src="${item.image}" class="modal-img">`;
+          mediaContainer.innerHTML = `<img src="${item.media_url}" class="modal-img">`;
         }
       } else {
         mediaContainer.innerHTML = '';
