@@ -33,7 +33,7 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'student_association_tv',
-    allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'mp4', 'mkv']
+    resource_type: 'auto'
   }
 });
 
@@ -69,8 +69,7 @@ app.get('/api/news', async (req, res) => {
 // ADMIN LOGIN API
 app.post('/api/admin/login', async (req, res) => {
     const { username, password } = req.body;
-    
-    // Check static or database admin (default admin fallback)
+
     if (username === 'admin' && password === 'admin123') {
         const token = jwt.sign({ username: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
         return res.json({ success: true, token });
@@ -89,7 +88,7 @@ app.post('/api/admin/news', authenticateToken, upload.single('mediaFile'), async
 
         let finalMediaPath = imageUrl || '';
         if (req.file) {
-            finalMediaPath = req.file.path; // Cloudinary secure URL
+            finalMediaPath = req.file.path;
         }
 
         const { data, error } = await supabase
