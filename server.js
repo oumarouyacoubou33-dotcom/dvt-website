@@ -70,7 +70,7 @@ app.get('/api/news', async (req, res) => {
 app.post('/api/admin/login', async (req, res) => {
     const { username, password } = req.body;
 
-    if (username === 'admin' && password === 'admin123') {
+    if (username === 'mrouyac' && password === 'Ibr@8588') {
         const token = jwt.sign({ username: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
         return res.json({ success: true, token });
     }
